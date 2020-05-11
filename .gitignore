@@ -21,3 +21,8 @@ artillery_report*
 coverage/*
 .vagrant/
 .vscode
+
+# Files created during tests
+plugin-data.csv
+report.json
+single-external-file-report.json

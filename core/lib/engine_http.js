@@ -36,7 +36,9 @@ function HttpEngine(script) {
   this.config = script.config;
 
   if (typeof this.config.defaults === 'undefined') {
-    this.config.defaults = {};
+    this.config.defaults = {
+      caseSensitive: false
+    };
   }
 
   // If config.http.pool is set, create & reuse agents for all requests (with
@@ -170,7 +172,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     };
   }
 
-  let f = function(context, callback) {
+  let f = (context, callback) => {
     let method = _.keys(requestSpec)[0].toUpperCase();
     let params = requestSpec[method.toLowerCase()];
 
@@ -226,6 +228,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
     requestParams = _.extend(requestParams, tls);
 
+    let caseSensitive = this.config.caseSensitive;
     let functionNames = _.concat(opts.beforeRequest || [], params.beforeRequest || []);
 
     async.eachSeries(
@@ -319,8 +322,15 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
 
         // Assign default headers then overwrite as needed
-        let defaultHeaders = lowcaseKeys(config.defaults.headers || {'user-agent': USER_AGENT});
-        const combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
+        let combinedHeaders;
+        let defaultHeaders;
+        if( caseSensitive) {
+          defaultHeaders = config.defaults.headers || {'user-agent': USER_AGENT};
+          combinedHeaders = _.extend(defaultHeaders, params.headers, requestParams.headers);
+        } else {
+          defaultHeaders = lowcaseKeys(config.defaults.headers || {'user-agent': USER_AGENT});
+          combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
+        }
         const templatedHeaders = _.mapValues(combinedHeaders, function(v, k, obj) {
           return template(v, context);
         });
